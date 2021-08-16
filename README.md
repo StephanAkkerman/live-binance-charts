@@ -1,2 +1,2 @@
-# Live_Binance_Charts
- Bootleg TradingView, but only for assets listed on Binance
+# Pre released for Tim
+What can I say, except you're welcome
