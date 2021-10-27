@@ -21,6 +21,7 @@ from PyQt5.QtGui import QApplication, QGridLayout
 from binance.client import Client
 from binance.websockets import BinanceSocketManager
 from binance.enums import *
+import ctypes
 
 client = Client()
 bm = BinanceSocketManager(client)
@@ -77,7 +78,7 @@ def add_plot(sym):
     global col
     global row
 
-    # Make 4 windows
+    # Make axis
     ax, ax_rsi = fplt.create_plot_widget(win, rows=2, init_zoom_periods=100)
 
     # Hide y-axis of chart graph
@@ -112,6 +113,7 @@ def add_plot(sym):
     # add_widgets(sym)
 
 
+# Currently disabled!
 def add_widgets(symbol):
     """Function to add default widgets for a chart"""
 
@@ -567,7 +569,13 @@ def all_timeframes():
 
 
 def add():
-    undefined
+    global nr_charts
+
+    # Symbol = next in preffered that is not used
+
+    add_plot("AXSUSDT")
+    nr_charts += 1
+    update_plot("AXSUSDT", '15m')
 
 
 def remove():
@@ -575,8 +583,8 @@ def remove():
     global widget_counter
     global columns
 
-    layout.itemAt(widget_counter).widget().deleteLater()
-    layout.itemAt(widget_counter - 1).widget().deleteLater()
+    global_layout.itemAt(widget_counter).widget().deleteLater()
+    global_layout.itemAt(widget_counter + 1).widget().deleteLater()
 
     widget_counter -= 2
 
@@ -593,13 +601,13 @@ timeframes = []
 row_count = 0
 col_count = 0
 
-
 def create_ctrl_panel():
     """Creates the control panel at the bottom of the display"""
     # could use timeframes instead of tf_list
     global preferred
     global row_count
     global col_count
+    global layout
 
     # addWidget(QWidget, row, column, rowSpan, columnSpan, Qt.Alignment alignment = 0)
     for symbol in symbol_list:
@@ -763,45 +771,49 @@ def save_settings():
 
     print("Saved settings")
 
+if __name__ == "__main__":
 
-# Make PyQt5 related stuff
-app = QApplication([])
-win = QGraphicsView()
-# Layout for the charts
-global_layout = QGridLayout()
-win.setLayout(global_layout)
-win.setWindowTitle("Charts")
+    # Make PyQt5 related stuff
+    app = QApplication([])
+    win = QGraphicsView()
+    # Layout for the charts
+    global_layout = QGridLayout()
+    win.setLayout(global_layout)
+    win.setWindowTitle("Charts")
 
-# Get list of currently supported symbols
-supported_symbols = [d["symbol"] for d in client.get_exchange_info().get("symbols")]
+    # Get list of currently supported symbols
+    supported_symbols = [d["symbol"] for d in client.get_exchange_info().get("symbols")]
 
-# Background color surrounding the plots
-win.setStyleSheet("background-color:" + fplt.background)
-win.resize(3000, 1000)
+    # Background color surrounding the plots
+    win.setStyleSheet("background-color:" + fplt.background)
+    width = ctypes.windll.user32.GetSystemMetrics(0)
+    height = ctypes.windll.user32.GetSystemMetrics(1)
+    win.resize(width*0.9, height*0.7)
 
-# Finplot requres this property
-win.axs = []
-fplt.autoviewrestore()
+    # Finplot requres this property
+    win.axs = []
+    fplt.autoviewrestore()
 
-get_preferred()
+    get_preferred()
 
-# Add control panel
-control_panel = create_ctrl_panel()
+    # Add control panel
+    control_panel = create_ctrl_panel()
 
-# Start binance sockets
-bm.start()
+    # Start binance sockets
+    bm.start()
 
-# Gets called every 5 sec
-fplt.timer_callback(realtime_update_plot, 5)
+    # Gets called every 5 sec
+    fplt.timer_callback(realtime_update_plot, 5)
 
-# prepares plots when they're all set up
-fplt.show(qt_exec=False)
-win.show()
-app.exec_()
+    # prepares plots when they're all set up
+    fplt.show(qt_exec=False)
+    win.show()
+    app.exec_()
 
 # Maybe use symbol + tf as key for axs_dict
 # Fix deleting
 # Decrease font size of price_highlight when new charts get added
+# Adjust to different screen sizes
 # Save control panel settings somewhere (assets and tf)
 # Maybe save historical candles
 # Caching??, see complicated.py
@@ -811,7 +823,6 @@ app.exec_()
 # $BTC.D chart, https://www.tradingview.com/symbols/CRYPTOCAP-BTC.D/
 # $TOTAL chart, https://www.tradingview.com/symbols/CRYPTOCAP-TOTAL/
 # Show funding percentage
-# Win.resize use screen size
 # Show percentual difference of candle in crosshair, possible?? https://github.com/highfestiva/finplot/wiki/Snippets#custom-crosshair-and-legend
 
 # Stock ideas, use yfinance lib:
