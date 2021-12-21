@@ -4,10 +4,10 @@
 [![MIT License](https://img.shields.io/github/license/StephanAkkerman/Live_Binance_Charts.svg?color=brightgreen)](https://opensource.org/licenses/MIT)
 
 ---
-This is a simple Python script showing multiple live charts of assets available on Binance.\
+This is a simple Python script showing multiple live charts of assets available on Binance.
 
 ## Note
-This is a pre-release, so expect some bugs.
+I will probably do an overhaul of this code in the future, making it use classes and multiple files.
 
 ## Features
 - Dark mode Tradingview style display
