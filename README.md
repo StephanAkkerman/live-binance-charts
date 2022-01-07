@@ -8,6 +8,7 @@ This is a simple Python script showing multiple live charts of assets available 
 
 ## Note
 I will probably do an overhaul of this code in the future, making it use classes and multiple files.
+I will also redo it by using [bokeh](https://github.com/bokeh/bokeh) for (hopefully) smoother live charts.
 
 ## Features
 - Dark mode Tradingview style display
