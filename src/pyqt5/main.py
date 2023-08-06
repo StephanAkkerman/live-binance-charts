@@ -1,12 +1,10 @@
-import numpy as np
-import pandas as pd
-import time
-import pickle
 from os import path
 from datetime import datetime
+import pickle
+import ctypes
+import pandas as pd
 from ta.momentum import RSIIndicator
 import finplot as fplt
-import PyQt5.QtCore as QtCore
 import pyqtgraph as pg
 from PyQt5.QtWidgets import (
     QGraphicsView,
@@ -15,13 +13,12 @@ from PyQt5.QtWidgets import (
     QWidget,
     QLineEdit,
     QPushButton,
-    QSpacerItem,
 )
 from PyQt5.QtGui import QApplication, QGridLayout
 from binance.client import Client
 from binance.websockets import BinanceSocketManager
 from binance.enums import *
-import ctypes
+
 
 client = Client()
 bm = BinanceSocketManager(client)
