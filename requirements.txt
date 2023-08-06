@@ -4,5 +4,5 @@ pandas==1.2.4
 pyqtgraph==0.12.1
 finplot==1.7
 binance==0.3
-numpy==1.21.2
+numpy==1.22.0
 PyQt5==5.15.4
