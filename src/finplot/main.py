@@ -6,7 +6,7 @@ import pandas as pd
 from ta.momentum import RSIIndicator
 import finplot as fplt
 import pyqtgraph as pg
-from PyQt5.QtWidgets import (
+from PyQt6.QtWidgets import (
     QGraphicsView,
     QComboBox,
     QCheckBox,
@@ -14,35 +14,21 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QPushButton,
 )
-from PyQt5.QtGui import QApplication, QGridLayout
+from PyQt6.QtWidgets import QGridLayout, QApplication
 from binance.client import Client
-from binance.websockets import BinanceSocketManager
+from binance import ThreadedWebsocketManager
 from binance.enums import *
 
+# Set the colors
+import config
 
 client = Client()
-bm = BinanceSocketManager(client)
+twm = ThreadedWebsocketManager()
 
 # fplt.plots created are stored here
 plots = {}
 
-# TradingView style
-# https://github.com/highfestiva/finplot/wiki/Settings
-fplt.foreground = "#7a7c85"
-fplt.background = "#131722"
-# Candles
-fplt.candle_bull_color = "#2e7871"
-# For hollow candles:
-# fplt.candle_bull_body_color = fplt.background
-# For filled candles:
-fplt.candle_bull_body_color = fplt.candle_bull_color
-fplt.candle_bear_color = "#e84752"
-# Cross hair
-fplt.cross_hair_color = "#5e6b78"
-# Volume
-fplt.volume_bull_color = "#265f5e"
-fplt.volume_bear_color = "#7d303a"
-fplt.volume_bull_body_color = fplt.volume_bull_color
+
 
 # List of symbols
 # Dictionary of the preffered symbols and timeframes
@@ -163,7 +149,7 @@ def add_widgets(symbol):
         # preferred[symbol] = panel.timeframe.currentText()
 
         # Start websockets based on timeframe selection
-        # bm.start_kline_socket(symbol, ws_response, interval=panel.timeframe.currentText())
+        # twm.start_kline_socket(symbol, ws_response, interval=panel.timeframe.currentText())
 
         # timeframes.append(panel.timeframe)
 
@@ -230,7 +216,6 @@ def update_plot(sym, timeframe):
 
 
 def price_highlight(sym, ax, ax_rsi):
-
     global symbol_data_dict
     df = symbol_data_dict[sym]
 
@@ -317,7 +302,6 @@ def ws_response(info):
     """
 
     try:
-
         global symbol_data_dict
 
         sym = info["s"]
@@ -369,7 +353,9 @@ def ws_response(info):
                 [data], columns="Time Open Close High Low Volume".split()
             ).astype({"Time": "datetime64[ms]"})
             candle.set_index("Time", inplace=True)
-            df = df.append(candle)
+            
+            # Add to dataframe
+            df = pd.concat([df, candle])
 
         # Symbol_dict consists of all ohlcv data
         symbol_data_dict[sym] = df
@@ -462,7 +448,6 @@ def change_asset():
 
     counter = 0
     for asset in assets:
-
         input = asset.text().upper()
 
         if usdt_mode and input[-4:] != "USDT":
@@ -471,7 +456,6 @@ def change_asset():
             new_symbol = asset.text().upper()
 
         if new_symbol in supported_symbols and new_symbol != symbol_list[counter]:
-
             # Get old symbol
             old_symbol = symbol_list[counter]
 
@@ -501,7 +485,9 @@ def change_asset():
             update_plot(new_symbol, timeframe)
 
             # Make a new websocket for this asset
-            bm.start_kline_socket(new_symbol, ws_response, interval=timeframe)
+            twm.start_kline_socket(
+                symbol=new_symbol, call_back=ws_response, interval=timeframe
+            )
 
             fplt.refresh()
 
@@ -518,7 +504,6 @@ def change_timeframe():
         sym = symbol_list[counter]
 
         if timeframe != preferred[sym]:
-
             # Get ax of plot
             ax = axs_dict[sym]
 
@@ -538,7 +523,7 @@ def change_timeframe():
             preferred[sym] = timeframe
 
             # Make a new websocket for this asset
-            bm.start_kline_socket(sym, ws_response, interval=timeframe)
+            twm.start_kline_socket(symbol=sym, callback=ws_response, interval=timeframe)
 
             fplt.refresh()
 
@@ -572,7 +557,7 @@ def add():
 
     add_plot("AXSUSDT")
     nr_charts += 1
-    update_plot("AXSUSDT", '15m')
+    update_plot("AXSUSDT", "15m")
 
 
 def remove():
@@ -598,6 +583,7 @@ timeframes = []
 row_count = 0
 col_count = 0
 
+
 def create_ctrl_panel():
     """Creates the control panel at the bottom of the display"""
     # could use timeframes instead of tf_list
@@ -608,7 +594,6 @@ def create_ctrl_panel():
 
     # addWidget(QWidget, row, column, rowSpan, columnSpan, Qt.Alignment alignment = 0)
     for symbol in symbol_list:
-
         # Add widgets below the columns
         if row_count == 0:
             # Add QWidget to global_layout
@@ -634,7 +619,7 @@ def create_ctrl_panel():
             # Checkbox for USDT mode
             panel.USDTmode = QCheckBox(panel)
             panel.USDTmode.setText("USDT mode")
-            panel.USDTmode.setCheckState(0)
+            panel.USDTmode.setCheckState(pg.Qt.QtCore.Qt.CheckState.Unchecked)
             panel.USDTmode.toggled.connect(USDT_mode)
             panel.USDTmode.setStyleSheet("color: white")
             layout.addWidget(panel.USDTmode, 1, col_count)
@@ -707,8 +692,8 @@ def create_ctrl_panel():
         preferred[symbol] = panel.timeframe.currentText()
 
         # Start websockets based on timeframe selection
-        bm.start_kline_socket(
-            symbol, ws_response, interval=panel.timeframe.currentText()
+        twm.start_kline_socket(
+            symbol=symbol, callback=ws_response, interval=panel.timeframe.currentText()
         )
 
         timeframes.append(panel.timeframe)
@@ -768,11 +753,12 @@ def save_settings():
 
     print("Saved settings")
 
-if __name__ == "__main__":
 
-    # Make PyQt5 related stuff
+if __name__ == "__main__":
+    # Make PyQt6 related stuff
     app = QApplication([])
     win = QGraphicsView()
+
     # Layout for the charts
     global_layout = QGridLayout()
     win.setLayout(global_layout)
@@ -785,7 +771,7 @@ if __name__ == "__main__":
     win.setStyleSheet("background-color:" + fplt.background)
     width = ctypes.windll.user32.GetSystemMetrics(0)
     height = ctypes.windll.user32.GetSystemMetrics(1)
-    win.resize(width*0.9, height*0.7)
+    win.resize(int(width * 0.7), int(height * 0.7))
 
     # Finplot requres this property
     win.axs = []
@@ -793,11 +779,11 @@ if __name__ == "__main__":
 
     get_preferred()
 
+    # Start binance sockets
+    twm.start()
+
     # Add control panel
     control_panel = create_ctrl_panel()
-
-    # Start binance sockets
-    bm.start()
 
     # Gets called every 5 sec
     fplt.timer_callback(realtime_update_plot, 5)
@@ -805,25 +791,4 @@ if __name__ == "__main__":
     # prepares plots when they're all set up
     fplt.show(qt_exec=False)
     win.show()
-    app.exec_()
-
-# Maybe use symbol + tf as key for axs_dict
-# Fix deleting
-# Decrease font size of price_highlight when new charts get added
-# Adjust to different screen sizes
-# Save control panel settings somewhere (assets and tf)
-# Maybe save historical candles
-# Caching??, see complicated.py
-# Make updating RSI more efficient
-# Fix candlestick countdown when different timeframes are selected, change global countdown
-# Add s/r levels?
-# $BTC.D chart, https://www.tradingview.com/symbols/CRYPTOCAP-BTC.D/
-# $TOTAL chart, https://www.tradingview.com/symbols/CRYPTOCAP-TOTAL/
-# Show funding percentage
-# Show percentual difference of candle in crosshair, possible?? https://github.com/highfestiva/finplot/wiki/Snippets#custom-crosshair-and-legend
-
-# Stock ideas, use yfinance lib:
-# DXY chart?
-# Add bid-ask chart?
-# Heatmap of limit orders (bids) (instead of bid-ask chart) https://github.com/highfestiva/finplot/blob/master/finplot/examples/heatmap.py
-# Add sound effect for quick price increase / decline
+    app.exec()
