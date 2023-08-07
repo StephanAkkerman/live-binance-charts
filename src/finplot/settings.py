@@ -5,7 +5,7 @@ import vars
 
 
 # Gets preferred settings at start up
-def get_preferred():
+def set_preferred():
     file = "settings.pkl"
     nr_charts = 4  # Remove this if more charts look nicer
 
@@ -42,15 +42,7 @@ def get_preferred():
             "ETCUSDT": "15m",
             "MATICUSDT": "15m",
         }
-        symbol_list = list(preferred.keys())[:nr_charts]
-
-    # Set global variables
-    # vars.preferred = preferred
-    # vars.symbol_list = symbol_list
-    # vars.nr_charts = nr_charts
-    preferred = {k: preferred[k] for k in list(preferred)[:nr_charts]}
-
-    return preferred
+    vars.preferred = {k: preferred[k] for k in list(preferred)[:nr_charts]}
 
 
 # Do this if the save button is pressed

@@ -51,8 +51,8 @@ def ws_response(info):
     if sym not in vars.symbol_data_dict:
         return
 
-    # if tf != vars.preferred[sym]:
-    #    return
+    if tf != vars.preferred[sym]:
+        return
 
     df = vars.symbol_data_dict[sym]
 

@@ -12,24 +12,26 @@ import finplot as fplt
 
 # Local
 import vars
-from settings import save_settings, get_preferred
+from settings import save_settings, set_preferred
 from binance_api import start_kline_socket, supported_symbols
 from plot import add_plot, update_plot
 
+
 def create_intial_GUI():
-    preferred_coins = get_preferred()
-    for coin, tf in preferred_coins.items():
+    set_preferred()
+    for coin, tf in vars.preferred.items():
         add_plot(coin, tf)
 
     # Add control panel
-    create_ctrl_panel(preferred_coins)
+    create_ctrl_panel()
 
-def create_ctrl_panel(preferred_coins: dict):
+
+def create_ctrl_panel():
     """Creates the control panel at the bottom of the display."""
     ctrl_col = 0
     ctrl_row = 0
 
-    for coin in preferred_coins:
+    for coin in vars.preferred:
         if ctrl_row == 0:
             panel = QWidget()
             vars.global_layout.addWidget(panel)
@@ -57,8 +59,6 @@ def create_ctrl_panel(preferred_coins: dict):
         if ctrl_row > 1:
             ctrl_row = 0
             ctrl_col += 2
-
-        vars.timeframes.append(panel.timeframe)
 
 
 def _create_timeframe_combobox(panel, layout, col_count):
@@ -119,7 +119,7 @@ def _create_coin_edit(panel, layout, ctrl_row, ctrl_col, symbol):
     panel.asset = QLineEdit(panel)
     panel.asset.setMaximumWidth(100)
     panel.asset.setText(symbol)
-    panel.asset.returnPressed.connect(change_selected_coin)
+    panel.asset.returnPressed.connect(change_plot_data)
     panel.asset.setStyleSheet("background-color: white")
     layout.addWidget(panel.asset, ctrl_row, ctrl_col)
     vars.selected_coins.append(panel.asset)
@@ -133,25 +133,27 @@ def _create_coin_tf_combobox(panel, layout, ctrl_row, ctrl_col):
         panel.timeframe.addItem(timeframe)
     panel.timeframe.setCurrentIndex(3)
     panel.timeframe.setMaximumWidth(100)
-    panel.timeframe.currentTextChanged.connect(change_timeframe)
+    panel.timeframe.currentTextChanged.connect(change_plot_data)
     panel.timeframe.setStyleSheet("background-color: white")
     layout.addWidget(panel.timeframe, ctrl_row, ctrl_col)
+    vars.timeframes.append(panel.timeframe)
 
 
 def add():
     """Adds a plot to the view."""
     add_plot("AXSUSDT", "15m")
-    #vars.nr_charts += 1
-    #update_plot("AXSUSDT", "15m")
+    # vars.nr_charts += 1
+    # update_plot("AXSUSDT", "15m")
 
 
 def remove():
     """Removes a chart from the view."""
+    # Delete plot and RSI
     vars.global_layout.itemAt(vars.widget_counter).widget().deleteLater()
     vars.global_layout.itemAt(vars.widget_counter + 1).widget().deleteLater()
     vars.widget_counter -= 2
     if vars.widget_counter + 1 % 4 == 0:
-        vars.columns -= 1
+        vars.col -= 1
     if vars.widget_counter == 8:
         vars.widget_counter = 7
 
@@ -168,82 +170,61 @@ def all_timeframes(control_panel):
         panel.setCurrentIndex(index)
 
 
-def change_timeframe():
+def change_plot_data():
     """Handles the event of changing the timeframe."""
-    counter = 0
-    for tf in vars.timeframes:
-        timeframe = tf.currentText()
-        sym = vars.symbol_list[counter]
 
-        if timeframe != vars.preferred[sym]:
-            # Get ax of plot
-            ax = vars.axs_dict[sym]
-            ax[0].reset()
-            ax[1].reset()
-
-            vars.symbol_data_dict[sym] = pd.DataFrame()
-
-            # Drop old plots
-            vars.plots.pop(sym + " price")
-            vars.plots.pop(sym + " volume")
-            vars.plots.pop(sym + " rsi")
-
-            # Get data for plot
-            update_plot(sym, timeframe)
-
-            vars.preferred[sym] = timeframe
-
-            # Make a new websocket for this asset
-            start_kline_socket(symbol=sym, interval=timeframe)
-
-            fplt.refresh()
-
-        counter += 1
-
-
-def change_selected_coin():
-    """Handles the event of changing the selected coin."""
-    counter = 0
-    for panel_coin in vars.selected_coins:
-        selected_coin = panel_coin.text().upper()
+    # Compare result with preferred
+    for i, (coin, timeframe) in enumerate(zip(vars.selected_coins, vars.timeframes)):
+        coin = coin.text().upper()
+        timeframe = timeframe.currentText()
 
         if vars.usdt_mode and input[-4:] != "USDT":
-            selected_coin += "USDT"
+            coin += "USDT"
 
-        if (
-            selected_coin in supported_symbols
-            and selected_coin != vars.symbol_list[counter]
-        ):
-            # Get old symbol
-            old_coin = vars.symbol_list[counter]
+        if (coin not in vars.preferred and coin in supported_symbols) or vars.preferred[
+            coin
+        ] != timeframe:
+            # Get ax of plot
+            if coin in vars.axs_dict:
+                ax = vars.axs_dict[coin]
+                ax[0].reset()
+                ax[1].reset()
 
-            # Get ax of plot and reset it
-            ax = vars.axs_dict[old_coin]
-            ax[0].reset()
-            ax[1].reset()
+                # Drop old plots
+                vars.plots.pop(coin + " price")
+                vars.plots.pop(coin + " volume")
+                vars.plots.pop(coin + " rsi")
 
-            # Update symbol_dict
-            vars.symbol_data_dict.pop(old_coin)
-            vars.symbol_data_dict[selected_coin] = pd.DataFrame()
+            # If the coin was changed
+            else:
+                old_coin = list(vars.preferred.keys())[i]
+                ax = vars.axs_dict[old_coin]
+                ax[0].reset()
+                ax[1].reset()
 
-            # Change symbol_list
-            vars.symbol_list[counter] = selected_coin
+                # Transfer information to new coin
+                vars.axs_dict[coin] = ax
 
-            vars.preferred.pop(old_coin)
-            timeframe = vars.timeframes[counter].currentText()
-            vars.preferred[selected_coin] = timeframe
+                # Update symbol_dict
+                vars.symbol_data_dict.pop(old_coin)
+                vars.preferred.pop(old_coin)
 
-            # Drop old plots
-            vars.plots.pop(old_coin + " price")
-            vars.plots.pop(old_coin + " volume")
-            vars.plots.pop(old_coin + " rsi")
+                # Drop old plots
+                vars.plots.pop(old_coin + " price")
+                vars.plots.pop(old_coin + " volume")
+                vars.plots.pop(old_coin + " rsi")
+
+            # Clear symbol data
+            vars.symbol_data_dict[coin] = pd.DataFrame()
 
             # Get data for plot
-            update_plot(selected_coin, timeframe)
+            update_plot(coin, timeframe)
+
+            vars.preferred[coin] = timeframe
 
             # Make a new websocket for this asset
-            start_kline_socket(symbol=selected_coin, interval=timeframe)
+            start_kline_socket(symbol=coin, interval=timeframe)
+
+            # Close old websocket
 
             fplt.refresh()
-
-        counter += 1
