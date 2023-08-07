@@ -1,5 +1,5 @@
 ta==0.7.0
-python_binance==0.7.5
+python_binance==1.0.17
 pandas==1.2.4
 pyqtgraph==0.12.1
 finplot==1.7
