@@ -4,19 +4,19 @@
 [![MIT License](https://img.shields.io/github/license/StephanAkkerman/Live_Binance_Charts.svg?color=brightgreen)](https://opensource.org/licenses/MIT)
 
 ---
-This is a simple Python script showing multiple live charts of assets available on Binance.
+This repository showcases my efforts in visualizing live cryptocurrency price data from the Binance exchange using two distinct implementations.
 
-## Implementations
-### finplot
-The most advance implementation of this project uses finplot and PyQt6 for plotting. This is a more advanced library for plotting in Python.
+## 📊 Implementations
+### 1. finplot
+Utilizing `finplot` combined with `PyQt6`, this implementation offers a sophisticated and advanced charting solution in Python.
 
-### mplfinance
-The other implementation uses mplfinance, which is based on matplotlib, a very popular plotting library. In `src/mplfinance/keys.py` you can specify your Binance API keys so that the chart automatically plots your assets. You can also leave this empty and specify the coins manually.
+### 2. mplfinance
+Leveraging `mplfinance`—built on the foundation of the widely-used `matplotlib` library—this approach provides another way to chart cryptocurrency data. Configure your Binance API keys in `src/mplfinance/keys.py` to auto-plot your assets, or leave it blank to manually specify the cryptocurrencies you'd like to visualize.
 
-## Features
-- Dark mode Tradingview style display
-- Remove or add charts to view
-- Real time updates, using the Binance websocket
+## ✨ Features
+- Dark Mode: Enjoy a Tradingview-style dark theme for better visual clarity.
+- Customizable View: Easily add or remove charts as per your preferences.
+- Real-time Updates: Stay updated with live data thanks to the Binance websocket integration.
 
 ## Dependencies
 The required packages to run this code can be found in the `requirements.txt` file. To run this file, execute the following code block:
