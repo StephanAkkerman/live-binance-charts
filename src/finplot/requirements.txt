@@ -3,7 +3,7 @@ finplot==1.9.2
 ta==0.7.0
 python_binance==1.0.15
 pandas==2.0.3
-requests==2.26.0
+requests==2.31.0
 binance==0.3
 PyQt6==6.5.2
 websocket_client==1.6.1
